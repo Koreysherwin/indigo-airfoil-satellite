@@ -1,68 +1,28 @@
 # Changelog
 
-All notable changes to the Apple Music Control Plugin will be documented in this file.
+## 0.1.7
+- Removed artwork availability queries from normal polling to reduce the risk of AppleScript timeouts.
+- Retained manual Refresh / Save Artwork action and saved artwork states.
+- Preserved the UTF-8 output handling from 0.1.6.
 
-## [1.0.4] - 2024-10-28
+## 0.1.6
+- Explicitly decode AppleScript output as UTF-8, with safe replacement for invalid bytes to prevent polling errors involving non-ASCII metadata.
 
-### Fixed
-- **Streaming radio station support**: Fixed "could not convert string to float: 'missing value'" error when playing streaming radio stations
-- Added safe handling for all numeric fields that may return 'missing value' from AppleScript
-- Duration, position, track number, disc number, rating, year, and volume now handle missing values gracefully
+## 0.1.5
+- Restored Indigo-compatible `UiDisplayStateId` XML declaration for `displayState`, fixing the device list State column.
 
-### Added
-- Streaming station indicator in status display shows "[Streaming]" tag for radio stations
-- Helper function `safe_int()` for robust handling of AppleScript 'missing value' returns
+## 0.1.4
+- Added update-on-change behavior and optional per-poll duration updates.
+- Added metadata debounce, streaming start/stop timestamps and counters, and last metadata update state.
 
-### Changed
-- Streaming stations now show duration as 0 instead of causing errors
-- Status display enhanced to differentiate between regular tracks and streaming content
+## 0.1.3
+- Revised the device list State column/display-state declaration.
 
-## [1.0.3] - 2024-10-28
+## 0.1.2
+- Added now-playing, connection/streaming durations, artwork states and save action, substring match states, optional Indigo variables and device state images.
 
-### Fixed
-- **Action visibility in Action Groups**: Changed `deviceFilter="self"` to `deviceFilter="self.appleMusicPlayer"` in Actions.xml for better action registration with Indigo
-- Actions now properly appear when selecting "Device Actions" → "Apple Music Player" in Action Groups
+## 0.1.1
+- Rebuilt the bundle using an Indigo 2025-compatible structure and Python 3 polling/actions.
 
-### Added
-- Debug logging to all action handler methods for better troubleshooting
-- Documentation clarification on how to use actions in Action Groups
-
-### Changed
-- Updated plugin version to 1.0.3 in Info.plist
-- Enhanced README with clearer instructions for using actions
-
-## [1.0.2] - 2024-10-XX
-
-### Fixed
-- Fixed error when Music app has no current track (stopped state)
-- Properly handle empty/stopped state without errors in AppleScript execution
-
-## [1.0.1] - 2024-10-XX
-
-### Fixed
-- Fixed AppleScript error with reserved keyword 'error'
-- Improved error handling in AppleScript execution
-
-## [1.0.0] - 2024-10-XX
-
-### Added
-- Initial release
-- Complete playback control (play, pause, stop, next, previous)
-- Comprehensive state monitoring (track info, playback position, volume, etc.)
-- Volume control with mute/unmute functionality
-- Position control (skip forward/backward, set position)
-- Shuffle and repeat controls
-- Playlist, album, and search playback
-- 5-star rating support
-- Library search functionality
-- Configurable update frequency
-- Optional Indigo variable integration
-- Full AppleScript integration with Music app
-
-### Features
-- 30+ device states for complete Music app monitoring
-- 20+ actions for full playback control
-- Real-time status updates
-- Works with both Apple Music subscription and local library
-- No API credentials required
-- Local-only operation (no network requests)
+## 0.1.0
+- Initial Airfoil Satellite monitor with connection and metadata reporting, inferred streaming state, refresh, transport, launch and quit actions.

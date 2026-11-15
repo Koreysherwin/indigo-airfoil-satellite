@@ -1,373 +1,90 @@
-# Apple Music Control Plugin for Indigo
+# Airfoil Satellite Control for Indigo
 
-A comprehensive Indigo plugin for controlling Apple Music and monitoring all playback data in real-time.
+A local macOS integration for Rogue Amoeba [Airfoil Satellite](https://rogueamoeba.com/airfoil/satellite/) and Indigo home automation. Monitor the connected sender and now-playing information, trigger automations, and send transport commands through Airfoil Satellite's AppleScript dictionary.
 
-## Version 1.0.3 - Action Visibility Fix
-**Fixed**: Actions now properly appear in Action Groups. Changed `deviceFilter="self"` to `deviceFilter="self.appleMusicPlayer"` for better action registration.
+**Current bundle version:** 0.1.7  
+**Developer:** Korey Sherwin / SherwinSound  
+**Plugin identifier:** `com.sherwinsound.airfoilsatellite`
 
-**To use actions**: In Action Groups, select "Device Actions" → Choose your Apple Music Player device → Actions will appear!
+## Requirements
 
----
+- Indigo 2025.1 or later (Server API 3.0, Python 3 runtime).
+- Airfoil Satellite for macOS installed on the Indigo server Mac, normally in /Applications.
+- A running macOS user session that permits Apple Events from the Indigo plugin process to Airfoil Satellite. Grant macOS Automation permission when prompted, if required.
+- A compatible Airfoil sender for testing.
 
-## Features
-
-### Device States (Auto-Updated)
-The plugin tracks and updates the following Apple Music information:
-
-#### Playback Status
-- **Player State**: playing, paused, or stopped
-- **Is Playing**: Boolean indicator
-- **Is Paused**: Boolean indicator  
-- **Is Stopped**: Boolean indicator
-
-#### Track Information
-- **Track Name**: Current track title
-- **Artist**: Track artist(s)
-- **Album**: Album name
-- **Album Artist**: Album artist
-- **Track Number**: Track number on album
-- **Disc Number**: Disc number for multi-disc albums
-- **Genre**: Music genre
-- **Composer**: Track composer
-- **Rating**: Track rating (0-100)
-- **Year**: Release year
-
-#### Playback Position
-- **Player Position**: Current position in seconds
-- **Player Position (Formatted)**: Position as MM:SS
-- **Duration**: Track length in seconds
-- **Duration (Formatted)**: Duration as MM:SS
-- **Progress Percentage**: Playback progress (0-100%)
-
-#### Audio Settings
-- **Volume**: Current volume (0-100)
-- **Muted**: Boolean mute status
-- **Shuffle Enabled**: Shuffle mode on/off
-- **Song Repeat**: Repeat mode (off, one, all)
-
-#### Display
-- **Status**: Human-readable status (e.g., "▶ Artist - Track Name")
-
-### Actions
-
-#### Playback Control
-- **Play**: Start playback
-- **Pause**: Pause playback
-- **Play/Pause Toggle**: Toggle between play and pause
-- **Stop**: Stop playback and reset position
-- **Next Track**: Skip to next track
-- **Previous Track**: Go to previous track
-
-#### Volume Control
-- **Set Volume**: Set specific volume level (0-100)
-- **Volume Up**: Increase volume by specified amount
-- **Volume Down**: Decrease volume by specified amount
-- **Mute**: Mute audio (remembers previous volume)
-- **Unmute**: Restore previous volume
-
-#### Position Control
-- **Set Playback Position**: Jump to specific second in track
-- **Skip Forward**: Jump forward by seconds
-- **Skip Backward**: Jump backward by seconds
-
-#### Playback Options
-- **Set Shuffle**: Turn shuffle on, off, or toggle
-- **Set Repeat**: Set repeat mode (off, one track, all tracks)
-
-#### Content Selection
-- **Play Playlist**: Play playlist by name
-- **Play Album**: Play album by name (optionally filter by artist)
-- **Search and Play**: Search your library and play first result
-
-#### Rating
-- **Set Rating**: Rate current track (0-5 stars)
-
-#### Utility
-- **Update Now**: Force immediate status update
+The plugin uses local AppleScript; it does not require an API token or cloud account.
 
 ## Installation
 
-1. **Download** the `AppleMusic.indigoPlugin` package
-2. **Double-click** the plugin file to install in Indigo
-3. **Restart** the Indigo server if prompted
+1. Download the plugin ZIP from [Releases](https://github.com/Koreysherwin/indigo-airfoil-satellite/releases) when available, or obtain the plugin bundle from the repository.
+2. Extract the ZIP and double-click `AirfoilSatellite.indigoPlugin`.
+3. Install the plugin in Indigo and restart the server if prompted.
+4. In Indigo, create a new device with type **Plugin**, plugin **Airfoil Satellite**, and model **Airfoil Satellite Monitor**.
+5. Launch Airfoil Satellite and connect to it from a sender. Check the Indigo Event Log and device state changes.
 
-## Setup
+## Configuration
 
-### Creating an Apple Music Device
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| Poll Interval | 5 seconds | Select 1, 2, 5, 10 or 30 seconds. In 0.1.7 the polling loop is capped at a 5-second sleep by its implementation. |
+| Only Update Indigo on Change | On | Suppress unnecessary duration-state updates. |
+| Update Durations Every Poll | Off | Enable to refresh duration counters during each poll. |
+| Metadata Debounce | 2 seconds | Wait for stable metadata before reporting changes. |
+| Use Indigo State Images | On | Reflect connection and inferred streaming status in the device icon. |
+| Save Artwork TIFF File | Off | Legacy setting in 0.1.7; use the manual Refresh / Save Artwork action instead. |
+| Artist/Album/Track/Now Playing Contains Match | Blank | Optional case-insensitive substring matching. |
+| Update Indigo Variables | Off | Optionally populate variables for automations. |
+| Variable Prefix | AirfoilSatellite | Prefix for generated variables. |
 
-1. In Indigo, go to **Devices** → **New...**
-2. Set Type: **Plugin** → **Apple Music Control**
-3. Select Model: **Apple Music Player**
-4. Configure settings:
-   - **Update Frequency**: How often to poll Apple Music (0.5-10 seconds)
-   - **Update Indigo Variables**: Enable to create/update variables
-   - **Variable Prefix**: Prefix for variable names (default: "AppleMusic")
+Plugin preferences also provide Normal or Debug logging.
 
-### Device Settings
+## Device states and triggers
 
-#### Update Frequency
-Choose how often the plugin checks Apple Music status:
-- **0.5 seconds**: Smoothest updates, higher CPU usage
-- **1 second**: Recommended for most uses
-- **2-5 seconds**: Good for background monitoring
-- **10 seconds**: Minimal CPU usage
+| State | Meaning |
+| --- | --- |
+| `connected` | Airfoil Satellite reports a connected remote sender. |
+| `streaming` | Inferred from connection and nonempty artist, album or track metadata. |
+| `artist`, `album`, `trackTitle`, `nowPlaying` | Now-playing information provided by the sender. |
+| `displayState` | Device list State column value. |
+| `connectedSince`, `streamingSince` | Observed connection and inferred streaming start times. |
+| `connectionDuration`, `streamingDuration` | Formatted durations. |
+| `connectionDurationSeconds`, `streamingDurationSeconds` | Numeric duration values. |
+| `lastConnectedStarted`, `lastConnectedStopped` | Observed connection start and stop timestamps. |
+| `lastStreamingStarted`, `lastStreamingStopped` | Observed streaming start and stop timestamps. |
+| `lastConnectedChange`, `lastStreamingChange` | Last observed state transition timestamps. |
+| `streamingStartCounter`, `streamingStopCounter` | Counters for normal polling-based transitions. |
+| `lastMetadataChange`, `lastMetadataUpdate`, `metadataChangeCounter` | Metadata tracking. |
+| `artistMatch`, `albumMatch`, `trackMatch`, `nowPlayingMatch` | Configured text-match results. |
+| `artworkAvailable`, `artworkPath` | Last manually retrieved artwork status and path; not live availability. |
+| `lastError` | Latest polling error, cleared on successful poll. |
 
-#### Variable Updates
-If enabled, the plugin will create and update Indigo variables with all Apple Music data:
-- Variables are named: `{Prefix}{StateName}` (e.g., `AppleMusicTrackName`)
-- Useful for Control Pages and other integrations
-- Variables are created automatically if they don't exist
+**Important:** Airfoil Satellite's AppleScript connection flag is not an audio-level or playback-status sensor. The streaming state is a metadata-based heuristic and can remain true while a sender is paused, or false when audio has no metadata. Test the appropriate trigger with your sender before using it for speaker power control. For connection-based automation use the connected state. Use streaming transitions or counters for metadata-based automation as appropriate.
 
-## Usage Examples
+## Actions
 
-### Adding Actions to Action Groups
+- Refresh Status
+- Refresh / Save Artwork
+- Play/Pause
+- Next Track
+- Previous Track
+- Launch Airfoil Satellite
+- Quit Airfoil Satellite
 
-**IMPORTANT**: To use Apple Music actions in Action Groups:
+Transport commands depend on the capabilities of the connected sender. Artwork is retrieved only on demand in 0.1.7, avoiding a potentially blocking AppleScript artwork query during normal polling. Saved TIFF files are located beneath the Indigo installation's Preferences/Plugins/AirfoilSatellite/Artwork directory. The saved path may refer to previous artwork; it is not automatically cleared when tracks change.
 
-1. Create or edit an Action Group
-2. Click "+" to add an action
-3. **Type**: Select **"Device Actions"** (NOT "Plugin Actions")
-4. **Device**: Select your **"Apple Music Player"** device
-5. **Action**: Now select from all available actions!
+## Example automation
 
-### Basic Playback Control
-```applescript
--- In Indigo Actions
-Execute Action "Apple Music Player - Play"
-Execute Action "Apple Music Player - Pause"
-Execute Action "Apple Music Player - Next Track"
-```
+Create an Indigo device-state trigger on the Airfoil Satellite Monitor's connected state changing to true to enable a listening zone, or use streamingStartCounter changing for an inferred playback-start event. Use a corresponding disconnect or streaming-stop trigger when appropriate. Validate these states with your own source before enabling power or source-switching automation.
 
-### Volume Control
-```applescript
--- Set volume to 50%
-Execute Action "Apple Music Player - Set Volume" with value "50"
-
--- Increase volume by 10
-Execute Action "Apple Music Player - Volume Up" with value "10"
-
--- Mute/Unmute
-Execute Action "Apple Music Player - Mute"
-Execute Action "Apple Music Player - Unmute"
-```
-
-### Play Specific Content
-```applescript
--- Play a playlist
-Execute Action "Apple Music Player - Play Playlist"
-  Playlist Name: "My Favorites"
-
--- Play an album
-Execute Action "Apple Music Player - Play Album"
-  Album Name: "Abbey Road"
-  Artist Name: "The Beatles"
-
--- Search and play
-Execute Action "Apple Music Player - Search and Play"
-  Search Query: "Bohemian Rhapsody"
-```
-
-### Rating Songs
-```applescript
--- Rate current track 5 stars
-Execute Action "Apple Music Player - Set Rating"
-  Rating: "100"
-```
-
-### Triggers Based on Apple Music State
-
-Create triggers based on device state changes:
-- Trigger when playback starts: `isPlaying` becomes `true`
-- Trigger when specific artist plays: `artist` contains "The Beatles"
-- Trigger when volume changes: `soundVolume` changes
-- Trigger when shuffle enabled: `shuffleEnabled` becomes `true`
-- Trigger when specific genre plays: `genre` contains "Classical"
-
-### Control Page Examples
-
-Add Apple Music controls to your Control Pages:
-- Display current track: Use `status` state
-- Display progress: Use `playerPositionFormatted` and `durationFormatted`
-- Volume slider: Control via Set Volume action
-- Play/Pause button: Use Play/Pause Toggle action
-- Show genre/rating: Use `genre` and `rating` states
-
-## Scripting Examples
-
-### Python Script
-```python
-# Get current track info
-applemusic_dev = indigo.devices[12345]  # Your device ID
-track = applemusic_dev.states['trackName']
-artist = applemusic_dev.states['artist']
-genre = applemusic_dev.states['genre']
-indigo.server.log(f"Now playing: {artist} - {track} ({genre})")
-
-# Control playback
-indigo.device.execute("Apple Music Player", action="play")
-indigo.device.execute("Apple Music Player", action="nextTrack")
-
-# Rate current track
-indigo.device.execute("Apple Music Player", action="setRating", props={"rating": "100"})
-```
-
-### AppleScript
-```applescript
-tell application "IndigoServer"
-    -- Get current track
-    set trackName to value of variable "AppleMusicTrackName"
-    
-    -- Execute actions
-    execute action "Play/Pause Toggle" of device "Apple Music Player"
-    
-    -- Check if playing
-    set isPlaying to value of state "isPlaying" of device "Apple Music Player"
-end tell
-```
-
-## Automation Ideas
-
-### Smart Playlists by Time of Day
-```python
-# Morning energetic music
-if time is 7:00 AM:
-    play playlist "Morning Energy"
-    set volume to 50
-
-# Evening calm music
-if time is 8:00 PM:
-    play playlist "Evening Chill"
-    set volume to 30
-```
-
-### Auto-Rate Frequently Played Songs
-- Track play counts via triggers
-- Auto-rate songs you skip through
-- Build "favorites" based on listening patterns
-
-### Genre-Based Lighting
-- Trigger: When `genre` changes
-- Action: Set room lighting based on genre
-  - Classical → Warm dim lighting
-  - Rock → Bright cool lighting
-  - Jazz → Warm medium lighting
-
-### Volume Management
-- Auto-lower volume during phone calls
-- Restore volume when calls end
-- Time-based volume limits (quiet hours)
+[Music Manager](https://github.com/Koreysherwin/indigo-music-manager) 1.2.5 and later includes Airfoil Satellite integration for unified music automation.
 
 ## Troubleshooting
 
-### Actions Not Showing in Action Groups
-**Solution**: Use "Device Actions" (not "Plugin Actions") and select your Apple Music Player device first. This is the correct Indigo workflow for device-specific actions.
+- Check the Indigo Event Log for AppleScript errors and enable Debug logging if required.
+- Confirm the app is installed, available in the Indigo host's user session and has macOS Automation permissions.
+- Test the app's dictionary with Script Editor: `tell application "Airfoil Satellite" to get is connected`.
+- The normal snapshot uses an 8-second AppleScript timeout; manual artwork saving has a 10-second timeout. AppleScript can still time out if the app or sender is unresponsive.
+- Unicode track metadata is explicitly decoded as UTF-8 with replacement for invalid byte sequences.
 
-### Plugin Not Updating
-- Ensure Music app is running
-- Check that Update Frequency is set appropriately
-- Try "Update Now" action to force refresh
-- Check Indigo log for errors
-
-### Actions Not Working
-- Verify Music app is running and responsive
-- Some actions require active playback
-- Check that Music has proper macOS permissions
-- Try controlling Music directly to verify it's working
-
-### Variables Not Created
-- Enable "Update Indigo Variables" in device settings
-- Check variable prefix doesn't conflict with existing variables
-- Variables are created on first update after enabling
-
-### Music Not Responding
-The plugin uses AppleScript to communicate with Music:
-- Music must be the native macOS Music app
-- macOS may prompt for accessibility permissions
-- Grant permissions in System Preferences → Security & Privacy
-
-### Playlist/Album Not Found
-- Ensure the playlist/album name exactly matches what's in your library
-- Names are case-sensitive
-- Check for special characters or extra spaces
-- Try searching directly in Music app first
-
-## Technical Details
-
-### Requirements
-- Indigo 2022.1 or later
-- macOS with Music app (formerly iTunes)
-- Python 3.7+ (included with Indigo)
-
-### How It Works
-- Uses AppleScript to communicate with Music application
-- Polls Music at configurable intervals
-- No network requests required (all local)
-- No Apple Music API credentials needed
-- Works with both Apple Music subscription and local library
-
-### Performance
-- Minimal CPU usage with 1-2 second update frequency
-- No impact on Music app performance
-- Updates only when device is active in Indigo
-
-### Differences from Spotify Plugin
-- **Ratings**: Apple Music supports 5-star ratings
-- **Repeat Modes**: Three modes (off/one/all) vs. Spotify's two
-- **Library Focus**: Works with your local library and Apple Music catalog
-- **Metadata**: Includes composer, genre, year information
-- **No URIs**: Uses playlist/album names instead of Spotify URIs
-
-## Version History
-
-### 1.0.3 (Current)
-- Fixed action visibility in Action Groups
-- Changed device filter from "self" to "self.appleMusicPlayer"
-- Added debug logging to action handlers
-- Improved documentation for action usage
-
-### 1.0.2
-- Fixed error when Music app has no current track (stopped state)
-- Properly handle empty/stopped state without errors
-
-### 1.0.1
-- Fixed AppleScript error with reserved keyword 'error'
-
-### 1.0.0
-- Initial release
-- Complete playback control
-- Comprehensive state monitoring
-- Variable integration
-- Rating support
-- Library search functionality
-
-## Support
-
-For issues or feature requests:
-1. Check Indigo plugin log for errors
-2. Verify Music app is working
-3. Test with different update frequencies
-4. Report issues with log excerpts
-
-## Comparison: Apple Music vs Spotify Plugin
-
-| Feature | Apple Music | Spotify |
-|---------|-------------|---------|
-| Track Info | ✓ | ✓ |
-| Playback Control | ✓ | ✓ |
-| Volume Control | ✓ | ✓ |
-| Position Control | ✓ | ✓ |
-| Shuffle/Repeat | ✓ | ✓ |
-| Ratings | ✓ (5-star) | ✗ |
-| Popularity | ✗ | ✓ |
-| Genre/Composer | ✓ | ✗ |
-| Play by URI | ✗ | ✓ |
-| Library Search | ✓ | ✗ |
-| Artwork URL | ✗ | ✓ |
-
-## License
-
-This plugin is provided as-is for use with Indigo home automation.
-
----
-
-**Note**: This plugin controls the macOS Music application on the Mac running Indigo. It works with your local music library and Apple Music subscription content. For controlling music on other devices, use AirPlay features within the Music app itself.
+See [CHANGELOG.md](CHANGELOG.md) for development history. Report issues via [GitHub Issues](https://github.com/Koreysherwin/indigo-airfoil-satellite/issues).
